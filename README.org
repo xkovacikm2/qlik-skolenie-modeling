@@ -1,0 +1,97 @@
+* Linky
+  - [[https://qcc.qlik.com][qlik continuous classroom]]
+  - [[https://help.qlik.com][qlik help]] 
+
+* Vseobecne poznamky
+  - ked kliknem na sede polozky vo filtri, cely filter sa vymaze, lebo keby sa
+    aplikovat, ostane mi nulovy prienik
+  - *snapshot* freezne v case vizualizaciu aj s datami. Lebo data sa mozu v case
+    menit, takto vies uchovat povodny stav. ale uz s tym nevies dalej pracovat. je
+    to taky interaktivnejsi screenshot
+  - skripty je dobre organizovat pomocou *skript sections*
+  - syntetic key nie je problem, pokial som ho ocakaval, ak som ho neocakaval,
+    tak je pravdepodobne, ze mam napicu namodelovane data, alebo loadujem nieco
+    co by som nemal. Preto je lepsie namodelovat si ich rucne, aby si vedel do
+    coho ides.
+  - preklady sa robia tak, ze vyexportujes tabulku so vsetkymi fieldami, potom
+    spravis preklady, naloadujes ju nazad, a pre kazdy jeden field vo
+    vizualiaciach nacitas z tej tabulky preklad cez funkciu:
+    ~=FieldValue(vLanguage, FieldIndex('Original', 'CategoryName'))~
+  - ked mam zvoleny filter, ale potrebujem ho kvoli vypoctu ignorovat, tak mozem
+    pouzit modifikatory fieldov. ~Sum({x}LineSales)~
+    - x = 1 ignoruj vsetky filtre
+    - x = $ aplikuj vsetky filtre
+    - x = {1-$} komplement odfiltrovanych
+    - x = {1\_$} predchadzajuci filter
+  - ~GetFieldSelection~ na vytiahnutie prave pouziteho filtra
+  - ~SetFieldSelection~ na programatorske setnutie filtra
+
+* Qlik training
+
+** Data connections
+   - pristup moze byt obmedzeny
+   - podporuju nacitanie zo suborov, z roznych databaz atd.
+
+** Qlik script
+   - podobne ako v sql sa prikazy oddeluju s ~;~
+   - ~LIB CONNECT~ je platny, kym ho nenahradi dalsi. Ked chcem citat z jedneho
+     zdroja, je najlepsie ho precitat ho cely a az potom ist na ine zdroje.
+   - ~ALIAS~ command funguje podobne ako connect, plati pre vsetky dalsie
+     zdrojaky. najlepsie je sa tomu asi vyhnut.
+   - ~RENAME~ funguje podobne ako alias, ale funguje aj spatne.
+   - najlepsie klasicky sql ~AS~
+   - qlik robi autojoiny! bacha na to 
+   - ked pouzijeme ~LOAD~ statement, do modelu sa ulozi iba to co je v loade.
+   - Ked chces nacitat vsetko, musis pouzit *
+   - ked robis nacitanie mesiacov z DB cez sql, tak to vrati cislo, qlik engine
+     vracia mesiac. tzv. ~dual~ value. Jedno sa pouziva na zobrazovanie a druhe
+     na sortovanie.
+   - Na predcasne ukoncenie je command ~Exit script;~
+   - pouziva vela excelovskych funkcii. Napriklad substring je ~left~
+   - nevies robit joinovanie, ale vies to ojebat tak, ze si premenujes v
+     tabulke, ktoru chces najoinovat stlpec a potom spravis where podla toho
+     stlpca. ale POZOR, neni to najoinovane, cize pouzivas ~Exists~ funkciu na
+     matchovanie.
+   - ~RecNo~ iterator zaznamu nacitavanej tabulky
+   - Vzdy by si sa mal snazit pouzivat numericke hodnoty pre kluce, lebo stringy
+     mozu byt pomale
+   - ~Mapping~ table sluzi na spojenie s vacsou tabulkou (ked chces mergnut
+     ciselnik) a aplikuje sa funkciou ~ApplyMap~
+   - Pozor na JOIN, robi sa tam automaticky ON a ked nemas spolocne kluce, tak
+     to spravi CROSS JOIN a to nechces
+   - ~KEEP~ rovnaka syntax ako pri joine, ale sluzi na vyhadzanie hodnot, ktore
+     su zbytocne. napr. vyhadz zakaznikov, ktori nemaju objednavky.
+   - keby si spravil 2 rovnake tabulky s inym menom, tak qlik ich automaticky
+     concatenatuje. ked to chcem vypnut, musim pouzit NoConcatenate keyword.
+   - \$(Include=[lib://path]) pre includnutie kodu. mozeme pouzivat na
+     versioning a aj na externy vyvoj mimo qliku
+   - klucove slovo ~Let~ na vytvorenie premennych, ktorych priradena hodnota
+     vyzaduje vypocet - treba aby sa jej dotkol interpreter. ~SET~ je pre
+     premenne, ktore nepotrebuju dotyk interpretera, ich hodnota je jasna hned
+     pri pisani.
+   - ked mam missing values, kvoli tomu, ze sa uplatnuje predchadzajuca hodnota,
+     mozem pouzit ~peek~, ktory pouzije poslednu pouzitu hodnotu.
+   - na bucketovanie sa da pouzit funkcia ~class~
+   - ked chces tabulecku loadovat z buffera, mozes pouzit funkciu ~Buffer (Stale
+     after 7 days)~ a kazdych 7 dni to refreshne buffer file.
+   - export do qvd filu - ~Store $(table) into $(file);~
+   - ~qvf~ subor je binarka s celym modelom. ked ho chcem naloadovat, musi to
+     byt prvy command v celom skripte. keyword je ~binary load~.
+** Qlik data model viewer
+   - *density* hovori, ze kolko percent dat ma vyplneny tento stlpec
+   - *subset ratio* hovori, ze tabulka ma kolko \% hodnot z celkoveho poctu
+     hovodnot cez vsetky tabulky. Idealne je, ked maju joinovane tabulky 100\%
+   - *snowflake schema* datamodel, kedy tabulky dimenzii su nalinkovane na
+     tabulku faktov. Dalsie tabulky sa mozu napajat na ine tabulky dimenzii, ale
+     nakoniec sa vzdy taha z tabulky faktov. Je to multidimenzionalny model.
+   - *antipatterny z relacnych db* - nie je cielom navrhnut perfektnu relacnu
+     db, vsetko su aj tak pointre na unikatne hodnoty, takze sa oplati obcas
+     mergovat tabulky.
+
+** Qlik sheet
+   - Qlik count sa pocita na tabulke, ktora pokryva vacsi subset. To je dost
+     random, treba si na to davat pozor. Idealne je vzdy pouzivat distinct.
+   - Qlik nepozna tabulky, vsetko uklada do poli. Vizualizacia modelu je len
+     abstrakcia pre lepsie pochopenie. Qlik ukada data do fieldov ako unikatne
+     hodnoty a potom pouziva len pointery, cim sa setri miesto.
+   - Suma je rychlejsia ako Count
